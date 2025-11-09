@@ -3,11 +3,16 @@ import axios from "axios";
 import "../style/home.css";
 import Navbar from "../components/Nav";
 import { io } from "socket.io-client";
-const socket = io("http://localhost:3000");
+
+// ✅ Stable single socket connection
+const socket = io("http://localhost:3000", {
+  withCredentials: true,
+  transports: ["websocket"],
+});
+
 const Home = () => {
   const [users, setUsers] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
-
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -18,10 +23,11 @@ const Home = () => {
 
         if (res.data.success) {
           const loginUserId = res.data.loggedInUserId;
-          
-          //socket addUser event
-          socket.emit("adduser", loginUserId);
-         
+
+       
+          socket.emit("addUser", loginUserId);
+          // console.log("🟢 Socket user added:", loginUserId);
+
           setSentRequests(res.data.sentRequests || []);
 
           const filteredUsers = res.data.data.filter(
@@ -29,8 +35,7 @@ const Home = () => {
           );
 
           setUsers(filteredUsers);
-        }
-        else {
+        } else {
           window.location.href = "/";
         }
       } catch (err) {
@@ -43,46 +48,38 @@ const Home = () => {
 
     fetchUsers();
 
-    //cleanUp function for disconnect socket
-    return () => {
-      socket.disconnect() 
-    }
+    
   }, []);
 
+  // 🟢 Handle Send Request
   const handleRequest = async (id) => {
     try {
-      
       setSentRequests((prev) => [...prev, id]);
-  
-      
+
       const res = await axios.get(`http://localhost:3000/send-request/${id}`, {
         withCredentials: true,
       });
-  
-      
+
       if (!res.data.success) {
         setSentRequests((prev) => prev.filter((reqId) => reqId !== id));
         alert(res.data.msg || "Failed to send request");
       }
     } catch (error) {
       console.error("Error sending request", error);
-      
       setSentRequests((prev) => prev.filter((reqId) => reqId !== id));
       alert("Failed to send request");
     }
   };
-  
-  
+
+  // 🟡 Handle Cancel Request
   const handleCancelRequest = async (id) => {
     try {
       const res = await axios.get(`http://localhost:3000/cancel-request/${id}`, {
         withCredentials: true,
       });
-  
+
       if (res.data.success) {
-       
         setSentRequests((prev) => prev.filter((reqId) => reqId !== id));
-  
       } else {
         alert(res.data.msg || "Failed to cancel request");
       }
@@ -92,16 +89,16 @@ const Home = () => {
     }
   };
 
-
+  // 🔴 Logout (disconnect socket here)
   const handleLogout = async () => {
     try {
       await axios.get("http://localhost:3000/logout", { withCredentials: true });
+      socket.disconnect(); // ✅ disconnect on logout only
       window.location.href = "/";
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
-
 
   return (
     <div className="home-container">
@@ -117,8 +114,7 @@ const Home = () => {
         <div className="user-list">
           {users.length > 0 ? (
             users.map((user) => {
-              const userId = user._id
-
+              const userId = user._id;
 
               return (
                 <div key={userId} className="user-card">
@@ -130,18 +126,23 @@ const Home = () => {
                     />
                     <span className="user-name">{user.name}</span>
                   </div>
+
                   <button
-                    className={`${sentRequests.includes(userId) ? "request-btn-sent" : "request-btn"}`}
+                    className={`${
+                      sentRequests.includes(userId)
+                        ? "request-btn-sent"
+                        : "request-btn"
+                    }`}
                     onClick={() =>
                       sentRequests.includes(userId)
                         ? handleCancelRequest(userId)
                         : handleRequest(userId)
                     }
                   >
-                    {sentRequests.includes(userId) ? "Cancel Request" : "Send Request"}
+                    {sentRequests.includes(userId)
+                      ? "Cancel Request"
+                      : "Send Request"}
                   </button>
-
-
                 </div>
               );
             })
@@ -154,4 +155,4 @@ const Home = () => {
   );
 };
 
-export default Home;  	
+export default Home;
