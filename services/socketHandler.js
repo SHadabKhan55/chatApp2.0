@@ -12,7 +12,7 @@ function setupSocket(server) {
   io.on("connection",(socket) => {
     console.log(`User connect: ${socket.id}`)
     
-    socket.on("addUser",(userId) => {
+    socket.on("addUser",(userId) => {// socket.on ki jaga io.on likhe to kiya hoga
       if(onlineUsers.has(userId)){
         onlineUsers.get(userId).push(socket.id)
       }else{

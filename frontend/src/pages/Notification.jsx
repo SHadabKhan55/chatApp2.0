@@ -39,7 +39,7 @@ const Notifications = () => {
       newSocket.emit("addUser", userId);
 
       newSocket.on("getNotification", (data) => {
-        console.log("📩 New notification received:", data);
+        console.log(" New notification received:", data);
         setNotifications((prev) => [data, ...prev]);
       });
 
