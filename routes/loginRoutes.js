@@ -25,6 +25,7 @@ const {
     unblockUser,
     getNotifications,
     singleUser,
+    createChat,
 } = require("../controller/homeController")
 
 
@@ -47,8 +48,16 @@ route.get("/unfriend/:id",checkUserLogin,unfriend)
 route.get("/block-user/:id",checkUserLogin,blockUser)
 route.get("/block-users", checkUserLogin, showBlockUser);
 route.get("/unblock/:id",checkUserLogin,unblockUser)
-route.get("/notifications", checkUserLogin, getNotifications);
 route.get("/single-user",checkUserLogin,singleUser)
+
+//======Notification routes======
+route.get("/notifications", checkUserLogin, getNotifications);
+
+//======Chats routes======
+route.get("/chat/:friendId", checkUserLogin, createChat);
+
+
+
 
 module.exports={
     route

@@ -1,6 +1,9 @@
 const { User } = require("../model/user")
 const { Notification } = require("../model/notification")
 const { sendNotification } = require("../services/sendNotification")
+const { Chat } = require("../model/chat");
+const { Message } = require("../model/message");
+
 
 //========= Show All User =======
 async function showUser(req, res) {
@@ -348,6 +351,31 @@ async function singleUser(req, res) {
 }
 
 
+
+async function createChat(req,res) {
+
+   try {
+    const userId = req.userId;  
+    const friendId = req.params.friendId;
+
+    
+    let chat = await Chat.findOne({
+      members: { $all: [userId, friendId] }
+    });
+
+    
+    if (!chat) {
+      chat = await Chat.create({
+        members: [userId, friendId]
+      });
+    }
+
+    res.json({ success: true, chat });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Chat error" });
+  }
+}
 module.exports = {
   showUser,
   sendRequest,
@@ -361,6 +389,7 @@ module.exports = {
   showBlockUser,
   unblockUser,
   getNotifications,
-  singleUser
+  singleUser,
+  createChat
 }
 
