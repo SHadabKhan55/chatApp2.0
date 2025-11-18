@@ -355,10 +355,10 @@ async function singleUser(req, res) {
 async function createChat(req,res) {
 
    try {
-    const userId = req.userId;  
+    const userId = req.user.id;  
     const friendId = req.params.friendId;
 
-    
+
     let chat = await Chat.findOne({
       members: { $all: [userId, friendId] }
     });
@@ -373,9 +373,57 @@ async function createChat(req,res) {
     res.json({ success: true, chat });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: "Chat error" });
+    res.json({ success: false, message: "Chat error",err:error.message });
   }
 }
+
+async function sendMessage(req,res) {
+  try {
+    const { chatId, text } = req.body;
+    const senderId = req.user.id;
+
+    console.log("sendMsg",req.body)
+    
+    const message = await Message.create({
+      chatId,
+      sender: senderId,
+      text
+    });
+
+    
+    await Chat.findByIdAndUpdate(chatId, {
+      latestMessage: message._id,
+      updatedAt: Date.now()
+    });
+
+    
+    // const io = require("../services/socketHandler").getIO();
+    // io.to(chatId).emit("newMessage", message);
+
+    res.json({ success: true, message });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Message failed",err:error.message });
+  }
+}
+
+
+async function getMessage (req, res)  {
+  try {
+    const chatId = req.params.chatId;
+
+    const messages = await Message.find({ chatId })
+      .populate("sender", "name")
+      .sort({ createdAt: 1 });
+
+    res.json({ success: true, messages });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Failed to load messages" });
+  }
+};
+
 module.exports = {
   showUser,
   sendRequest,
@@ -390,6 +438,8 @@ module.exports = {
   unblockUser,
   getNotifications,
   singleUser,
-  createChat
+  createChat,
+  sendMessage,
+  getMessage
 }
 

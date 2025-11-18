@@ -29,6 +29,8 @@
     filter: blur(100px);
     z-index: 0;
   }
+
+
   
   .chat-page::after {
     content: "";
@@ -235,6 +237,7 @@
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+  
   
   
   /* ===== ANIMATIONS ===== */

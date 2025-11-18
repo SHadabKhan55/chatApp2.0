@@ -38,14 +38,14 @@ exports.sendMessage = async (req, res) => {
     const { chatId, text } = req.body;
     const senderId = req.userId;
 
-    // save message
+    
     const message = await Message.create({
       chatId,
       sender: senderId,
       text
     });
 
-    // update latest message in chat
+    
     await Chat.findByIdAndUpdate(chatId, {
       latestMessage: message._id,
       updatedAt: Date.now()
@@ -75,7 +75,7 @@ exports.getMessages = async (req, res) => {
     const chatId = req.params.chatId;
 
     const messages = await Message.find({ chatId })
-      .populate("sender", "name email")
+      .populate("sender", "name")
       .sort({ createdAt: 1 });
 
     res.json({ success: true, messages });

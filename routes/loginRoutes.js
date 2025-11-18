@@ -26,6 +26,8 @@ const {
     getNotifications,
     singleUser,
     createChat,
+    sendMessage,
+    getMessage
 } = require("../controller/homeController")
 
 
@@ -55,6 +57,8 @@ route.get("/notifications", checkUserLogin, getNotifications);
 
 //======Chats routes======
 route.get("/chat/:friendId", checkUserLogin, createChat);
+route.post("/send-message", checkUserLogin, sendMessage);
+route.get("/get-messages/:chatId", checkUserLogin, getMessage);
 
 
 
