@@ -1,17 +1,22 @@
 const {Server} = require("socket.io")
 let io;
 let onlineUsers = new Map()
+
 function setupSocket(server) {
   io = new Server(server,{
     cors:{
-    origin: "http://localhost:5173",
-    credentials: true,
+      origin: "http://localhost:5173",
+      credentials: true,
     }
   })
 
   io.on("connection",(socket) => {
     console.log(`User connect: ${socket.id}`)
     
+<<<<<<< HEAD
+=======
+    // USER JOIN LIST
+>>>>>>> bada222 (complete)
     socket.on("addUser",(userId) => {
       if(onlineUsers.has(userId)){
         onlineUsers.get(userId).push(socket.id)
@@ -19,8 +24,14 @@ function setupSocket(server) {
         onlineUsers.set(userId,[socket.id])
       }
       console.log(`User added:${userId} =>  socketId${onlineUsers.get(userId)}`)
-
     });
+
+    // ⭐ NEW: JOIN A CHAT ROOM
+    socket.on("joinChat", (chatId) => {
+      socket.join(chatId);
+      console.log(`User joined chat room: ${chatId}`);
+    });
+
     socket.on("disconnect", () => {
       for(let [key,sIds] of onlineUsers.entries()){
         const filtered = sIds.filter(id => id !== socket.id)

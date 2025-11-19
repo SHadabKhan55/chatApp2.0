@@ -11,16 +11,34 @@ const ChatUI = () => {
   const { friendId } = useParams();
   const [chatId, setChatId] = useState(null);
   const [text, setText] = useState("");
-  const [messages, setMessages] = useState([]); // NEW ➜ all messages
+  const [messages, setMessages] = useState([]);
+  const [userId, setUserId] = useState(null); // logged-in user ID
 
-  // Load chat + its messages
+  // ✅ Fetch logged-in user ID
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/single-user", {
+          withCredentials: true,
+        });
+        if (res.data.success) {
+          setUserId(res.data.data._id);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  // ✅ Fetch chat
   useEffect(() => {
     async function fetchChat() {
+      if (!userId) return; // wait for userId
       try {
-        const res = await axios.get(
-          `http://localhost:3000/chat/${friendId}`,
-          { withCredentials: true }
-        );
+        const res = await axios.get(`http://localhost:3000/chat/${friendId}`, {
+          withCredentials: true,
+        });
 
         if (res.data.success) {
           const id = res.data.chat._id;
@@ -31,28 +49,38 @@ const ChatUI = () => {
         console.log(err);
       }
     }
-
     fetchChat();
-  }, [friendId]);
+  }, [friendId, userId]);
 
-  // Load messages
+  // ✅ Real-time listener
+  useEffect(() => {
+    if (!chatId) return;
+
+    socket.emit("joinChat", chatId);
+
+    socket.on("newMessage", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    return () => socket.off("newMessage");
+  }, [chatId]);
+
+  // ✅ Fetch messages
   async function fetchMessages(id) {
     try {
-      const res = await axios.get(
-        `http://localhost:3000/get-messages/${id}`,
-        { withCredentials: true }
-      );
+      const res = await axios.get(`http://localhost:3000/get-messages/${id}`, {
+        withCredentials: true,
+      });
 
       if (res.data.success) {
-        setMessages(res.data.messages); // SET messages in UI
+        setMessages(res.data.messages);
       }
-
     } catch (error) {
       console.log(error);
     }
   }
 
-  // Send message
+  // ✅ Send message
   async function handleSend() {
     if (!text.trim()) return;
 
@@ -64,58 +92,66 @@ const ChatUI = () => {
       );
 
       if (res.data.success) {
-        // Message ko UI me add karo without reloading
-        setMessages((prev) => [...prev, res.data.message]);
         setText("");
       }
-
     } catch (error) {
       console.log("send:", error);
     }
   }
 
-  return (
-    <div className="chat-page">
-      <Navbar />
+ return (
+  <div className="chat-page">
+    <Navbar />
 
-      <div className="chat-container">
-        <div className="chat-section">
+    <div className="chat-container">
+      <div className="chat-section">
+        <div className="chat-header">
+          <span>Friend</span>
+        </div>
 
-          <div className="chat-header">
-            <span>Friend</span>
-          </div>
+        <div className="chat-messages">
+          {messages.length === 0 ? (
+            <p style={{ color: "#aaa", textAlign: "center", marginTop: "20px" }}>
+              No messages yet...
+            </p>
+          ) : (
+            messages.map((msg) => {
+              // Determine if the message is sent or received
+              const isSent =
+                msg.sender === userId || msg.sender?._id === userId;
 
-          {/* MESSAGE LIST */}
-          <div className="chat-messages">
-            {messages.length === 0 ? (
-              <p style={{ color: "#aaa", textAlign: "center", marginTop: "20px" }}>
-                No messages yet...
-              </p>
-            ) : (
-              messages.map((msg) => (
-                <div key={msg._id} className="chat-bubble">
-                  <strong>{msg.sender?.name}: </strong>
+              // Determine sender name fallback
+              const senderName =
+                msg.sender?.name || (isSent ? "You" : "Friend");
+
+              return (
+                <div
+                  key={msg._id}
+                  className={`message ${isSent ? "sent" : "received"}`}
+                >
+                  <strong>{senderName}: </strong>
                   <span>{msg.text}</span>
                 </div>
-              ))
-            )}
-          </div>
+              );
+            })
+          )}
+        </div>
 
-          {/* INPUT */}
-          <div className="chat-input">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-            <button onClick={handleSend}>Send</button>
-          </div>
-
+        <div className="chat-input">
+          <input
+            type="text"
+            placeholder="Type a message..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+          <button onClick={handleSend}>Send</button>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default ChatUI;

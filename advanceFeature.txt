@@ -1,0 +1,13 @@
+Next Steps (Optional)
+
+Typing indicator (“…typing”)
+
+Message seen / delivered
+
+Online users list
+
+Image / file sharing
+
+Real-time notifications
+
+Last seen feature

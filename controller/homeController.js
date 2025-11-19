@@ -397,8 +397,8 @@ async function sendMessage(req,res) {
     });
 
     
-    // const io = require("../services/socketHandler").getIO();
-    // io.to(chatId).emit("newMessage", message);
+    const io = require("../services/socketHandler").getIO();
+    io.to(chatId).emit("newMessage", message);
 
     res.json({ success: true, message });
 
